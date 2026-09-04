@@ -156,19 +156,46 @@ src/features.py    payday estimation, issuer stress, feature construction
 src/policies.py    baseline policies; the Policy interface
 src/agent.py       the recovery agent
 src/evaluate.py    scoring harness (common random numbers, full costing)
+src/explain.py     turns a decision into plain English
+src/razorpay_webhook.py   ingests a real payment.failed webhook
+app.py             the browser console
+templates/         console UI
 scripts/           dataset build, baseline tuning, training, evaluation
 tests/             integrity tests
 docs/              architecture, taxonomy, assumptions, baselines, agent,
                    security, pitch
 ```
 
-## Reproduce
+## Run it
 
 ```bash
-pip install numpy pandas pyarrow scikit-learn
+pip install -r requirements.txt
+python app.py
+```
 
+Then open **http://127.0.0.1:8000** — on Windows use the IP, not `localhost`,
+which resolves to IPv6 first and costs ~2 seconds per request.
+
+The console has three modes:
+
+- **Try it** — you choose what actually went wrong; the model is never told, and
+  has to work it out from what the bank says. Watch it decide, act across seven
+  days, and land next to a conventional retry system. Press *"same problem,
+  different bank message"* to see one cause produce different bank replies —
+  which is the whole problem in one button.
+- **Real cases** — the same walkthrough on real held-out failures, including
+  the ones the agent gets wrong.
+- **Live integration** — POST a genuine Razorpay `payment.failed` webhook and
+  get the recovery plan back.
+
+The data and trained model are committed (~6 MB), so this works straight after
+cloning. Nothing needs regenerating first.
+
+## Reproduce the results
+
+```bash
 python verify.py            # everything, end to end (~25 min)
-python verify.py --quick    # both test suites only (~90s)
+python verify.py --quick    # the test suites only (~90s)
 ```
 
 Or run the stages individually:
@@ -181,6 +208,7 @@ python -m scripts.run_baselines     # score the baselines
 python -m scripts.train_agent       # exploration log -> two models -> guardrail
 python -m scripts.run_evaluation    # held-out comparison
 python -m scripts.demo_cases        # side-by-side case studies
-python -m tests.test_integrity      # 27 checks: the evaluation is honest
+python -m tests.test_integrity        # 27 checks: the evaluation is honest
 python -m tests.test_vulnerabilities  # 20 attacks on the guardrails
+python -m tests.test_webhook          # 21 checks on the Razorpay adapter
 ```

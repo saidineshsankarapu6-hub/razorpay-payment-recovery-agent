@@ -1,0 +1,7 @@
+# Pinned to the versions this was built and tested against.
+# Everything else in the standard library.
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.7.0
+pyarrow==23.0.1        # reading the committed .parquet datasets
+flask==3.0.3           # the browser console (app.py)
