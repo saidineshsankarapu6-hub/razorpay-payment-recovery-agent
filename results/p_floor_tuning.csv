@@ -1,0 +1,6 @@
+p_floor,recovery,net_value,fraud_attempts,fraud_penalty,within_budget
+0.0,0.742,4564005.0,257,64250.0,False
+0.08,0.7413,4554909.0,257,64250.0,False
+0.18,0.736,4524293.0,239,59750.0,False
+0.28,0.72,4404460.0,125,31250.0,True
+0.4,0.693,4181326.0,35,8750.0,True

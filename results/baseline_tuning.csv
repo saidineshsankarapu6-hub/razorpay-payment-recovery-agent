@@ -1,0 +1,16 @@
+branch,playbook,branch_recovery,overall_recovery,net_value,fraud_attempts
+HARD_DECLINE,"nudge,retry,switch",0.6383,0.6637,11799965.0,548
+HARD_DECLINE,"switch,retry,retry",0.6302,0.6606,11559600.0,822
+HARD_DECLINE,"retry,retry,retry",0.6171,0.6558,11403382.0,822
+HARD_DECLINE,"retry,switch,retry",0.6099,0.6531,11389608.0,822
+HARD_DECLINE,"retry,retry,switch",0.5984,0.6488,11310017.0,822
+HARD_DECLINE,"retry24,retry72",0.5582,0.6339,11000213.0,548
+HARD_DECLINE,"retry,nudge,switch",0.5304,0.6236,10898734.0,548
+HARD_DECLINE,"retry,retry",0.5089,0.6156,10611120.0,548
+FUNDS,"nudge2,retry48,retry120",0.7506,0.6637,11799965.0,548
+FUNDS,"nudge2,retry24,retry96",0.7476,0.6632,11799451.0,548
+FUNDS,"nudge2,retry24,switch72",0.701,0.6559,11727841.0,548
+FUNDS,"nudge2,retry24",0.6558,0.6488,11539484.0,548
+FUNDS,"retry24,retry72,retry144",0.7113,0.6575,11537897.0,548
+FUNDS,"retry1,retry24,retry72",0.6936,0.6547,11507914.0,548
+FUNDS,"retry24,nudge48,retry120",0.6891,0.654,11487717.0,548

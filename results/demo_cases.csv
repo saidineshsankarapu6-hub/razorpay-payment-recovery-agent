@@ -1,0 +1,10 @@
+cause,txn_id,amount,policy,recovered,cost,actions
+NO_FUNDS,63362,11305.6,fixed_retry,True,2.5,retry@+1h
+NO_FUNDS,63362,11305.6,rule_based,True,0.9,nudge@+1h
+NO_FUNDS,63362,11305.6,agent,True,0.9,nudge@+0.5h
+LIMIT_EXCEEDED,83738,6841.48,fixed_retry,True,5.0,retry@+1h -> retry@+24h
+LIMIT_EXCEEDED,83738,6841.48,rule_based,True,5.9,nudge@+1h -> retry@+24h -> switch_method@+48h
+LIMIT_EXCEEDED,83738,6841.48,agent,False,3.6,nudge@+0.5h -> nudge@+2h -> nudge@+12h -> nudge@+24h
+RISK_BLOCK,20014,7986.82,fixed_retry,False,757.5,retry@+1h -> retry@+24h -> retry@+72h
+RISK_BLOCK,20014,7986.82,rule_based,False,505.9,nudge@+1h -> retry@+24h -> switch_method@+48h
+RISK_BLOCK,20014,7986.82,agent,False,3.6,nudge@+0.5h -> nudge@+2h -> nudge@+12h -> nudge@+24h

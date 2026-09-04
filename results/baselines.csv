@@ -1,0 +1,4 @@
+policy,recovery_rate,value_rate,revenue_recovered,cost,net_value,attempts_pp,fraud_attempts,median_h_to_recover
+no_recovery,0.0,0.0,0.0,0.0,0.0,0.0,0,
+fixed_retry,0.5828,0.5193,4968517.0,174015.0,4794502.0,2.16,603,1.0
+rule_based,0.6535,0.6051,5789857.0,89542.0,5700314.0,1.86,302,2.0

@@ -1,0 +1,460 @@
+<!doctype html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recovery Console</title>
+<style>
+:root{
+  --bg:#f4f6f9; --card:#fff; --line:#e2e6ec; --fg:#101720; --dim:#69748a;
+  --good:#0b7d3e; --goodbg:#e8f7ee; --bad:#c3392c; --badbg:#fdeceb;
+  --warn:#8a5d00; --warnbg:#fdf4e1; --blue:#1358c8; --bluebg:#eaf2fd;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.top{background:var(--card);border-bottom:1px solid var(--line);padding:13px 26px;
+  display:flex;align-items:center;gap:16px}
+.brand{font-weight:660;font-size:16px}
+.brand span{display:block;font-weight:400;font-size:12px;color:var(--dim)}
+.modes{display:flex;gap:3px;background:#eef1f5;padding:3px;border-radius:9px}
+.mode{padding:7px 15px;border-radius:7px;font-size:14px;font-weight:600;
+  color:var(--dim);cursor:pointer;user-select:none}
+.mode.on{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.09)}
+.spacer{flex:1}
+.live{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--dim)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--good);animation:p 1.3s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+button{font:inherit;font-size:14px;font-weight:600;padding:8px 15px;border-radius:8px;
+  border:1px solid var(--line);background:var(--card);color:var(--fg);cursor:pointer}
+button:hover{background:#eef1f5}
+.view{display:none}.view.on{display:block}
+
+/* ---------- SIMPLE LIVE ---------- */
+.wrap{max-width:880px;margin:0 auto;padding:26px 26px 80px}
+.q1{font-size:22px;font-weight:660;letter-spacing:-.02em;margin-bottom:4px}
+.q2{color:var(--dim);font-size:14px;margin-bottom:20px}
+
+.form{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:20px 22px;margin-bottom:16px}
+.row{display:grid;grid-template-columns:190px 1fr;gap:16px;align-items:center;
+  padding:12px 0;border-bottom:1px solid #f0f2f5}
+.row:last-child{border-bottom:0}
+.row>label{font-size:14.5px;font-weight:600}
+.row .sub{display:block;font-weight:400;color:var(--dim);font-size:12.5px;margin-top:1px}
+select{width:100%;background:var(--card);color:var(--fg);border:1px solid var(--line);
+  border-radius:9px;padding:10px 11px;font:inherit;font-size:15px}
+.slide{display:flex;align-items:center;gap:14px}
+input[type=range]{flex:1;accent-color:var(--blue);height:5px}
+.val{font-size:19px;font-weight:660;font-variant-numeric:tabular-nums;
+  min-width:112px;text-align:right}
+.toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.sw{width:42px;height:24px;border-radius:14px;background:#d5dae2;position:relative;
+  transition:.2s;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;
+  border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on .sw{background:var(--blue)}
+.toggle.on .sw::after{transform:translateX(18px)}
+
+/* the answer */
+.ans{background:var(--card);border:2px solid var(--blue);border-radius:14px;
+  padding:24px 26px;margin-bottom:16px;transition:.25s}
+.ans.stop{border-color:var(--bad)}
+.ans .lb{font-size:12px;font-weight:700;letter-spacing:.09em;color:var(--dim);
+  text-transform:uppercase}
+.ans .hd{display:flex;align-items:center;gap:18px;margin-top:12px}
+.ans .ic{width:58px;height:58px;border-radius:16px;background:var(--bluebg);
+  color:var(--blue);display:grid;place-items:center;font-size:28px;flex:none}
+.ans.stop .ic{background:var(--badbg);color:var(--bad)}
+.ans .big{font-size:27px;font-weight:680;letter-spacing:-.025em;line-height:1.25}
+.ans .odds{color:var(--dim);font-size:14.5px;margin-top:4px}
+.why{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.why .t{font-size:16px;font-weight:620;margin-bottom:8px}
+.why ul{margin:0;padding-left:20px;color:#3d4756;font-size:14.5px}
+.why li{margin:4px 0}
+.why .r{color:var(--dim);font-size:13.5px;margin-top:10px;font-style:italic}
+.flag{margin-top:14px;background:var(--warnbg);border-left:3px solid #d9a83c;
+  padding:11px 14px;border-radius:0 8px 8px 0;font-size:14px;color:#5d4400}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.cmp>div{border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.cmp .us{border-color:#b9d3f7;background:var(--bluebg)}
+.cmp .w{font-size:11.5px;font-weight:700;color:var(--dim);letter-spacing:.05em}
+.cmp .v{font-weight:640;font-size:15px;margin-top:4px}
+
+details.more{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:14px 20px}
+details.more summary{cursor:pointer;font-weight:600;font-size:14.5px;color:var(--blue)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;margin-top:14px}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line)}
+th{color:var(--dim);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.win td{background:var(--bluebg);color:var(--blue);font-weight:650}
+.trk{height:7px;background:#e8ebf0;border-radius:4px;min-width:60px;overflow:hidden}
+.trk>i{display:block;height:100%;background:var(--blue);transition:width .3s}
+tr.win .trk>i{background:var(--good)}
+.chk{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px}
+.chk .m{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;
+  font-size:12px;font-weight:800;flex:none}
+.chk .m.ok{background:var(--goodbg);color:var(--good)}
+.chk .m.no{background:var(--badbg);color:var(--bad)}
+.chk .m.up{background:var(--warnbg);color:var(--warn)}
+.chk .d{color:var(--dim);font-size:12.5px}
+
+/* ---------- REPLAY ---------- */
+#replay .grid{display:grid;grid-template-columns:250px 1fr;height:calc(100vh - 55px)}
+.side{background:var(--card);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;overflow:hidden}
+.sect{padding:13px 16px 6px;font-size:11px;font-weight:700;letter-spacing:.08em;
+  color:var(--dim);text-transform:uppercase}
+.scn{padding:0 9px 10px;border-bottom:1px solid var(--line)}
+.scn div{padding:8px 11px;border-radius:8px;font-size:13.5px;cursor:pointer;color:var(--dim)}
+.scn div:hover{background:#eef1f5;color:var(--fg)}
+.scn div.on{background:var(--bluebg);color:var(--blue);font-weight:600}
+.queue{flex:1;overflow-y:auto}
+.qq{padding:10px 16px;border-bottom:1px solid #f0f2f5;cursor:pointer;display:flex;
+  align-items:center;gap:8px}
+.qq:hover{background:#f6f8fa}
+.qq.on{background:var(--bluebg);box-shadow:inset 2px 0 0 var(--blue)}
+.qq .amt{font-variant-numeric:tabular-nums;font-weight:600;font-size:13.5px;flex:1}
+.qq .op{width:6px;height:6px;border-radius:50%;background:#d9a83c;flex:none}
+.rmain{display:flex;flex-direction:column;overflow:hidden}
+.rbar{padding:10px 20px;border-bottom:1px solid var(--line);background:var(--card);
+  display:flex;align-items:center;gap:9px}
+.pill{font-size:12.5px;color:var(--dim);margin-left:auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:16px 18px;margin-bottom:13px}
+.ct{font-size:11.5px;font-weight:700;letter-spacing:.07em;color:var(--dim);
+  text-transform:uppercase;margin-bottom:12px}
+.lane{display:grid;grid-template-columns:100px 1fr;gap:12px;align-items:center;margin-bottom:8px}
+.lane .nm{font-size:12px;font-weight:700;text-align:right;color:var(--dim)}
+.lane.us .nm{color:var(--blue)}
+.track{position:relative;height:46px;background:#f3f5f8;border-radius:9px;border:1px solid var(--line)}
+.track .ln{position:absolute;left:0;right:0;top:50%;height:2px;background:var(--line)}
+.mk{position:absolute;top:50%;transform:translate(-50%,-50%) scale(0);
+  width:27px;height:27px;border-radius:50%;display:grid;place-items:center;
+  font-size:13px;font-weight:700;transition:.35s cubic-bezier(.34,1.4,.64,1);border:2px solid #fff}
+.mk.in{transform:translate(-50%,-50%) scale(1)}
+.mk.ok{background:var(--good);color:#fff}
+.mk.no{background:#c2cad6;color:#fff}
+.mk.pen{background:var(--bad);color:#fff}
+.mk .lb2{position:absolute;top:30px;left:50%;transform:translateX(-50%);
+  font-size:10.5px;white-space:nowrap;color:var(--dim);font-weight:600}
+.axis{display:grid;grid-template-columns:100px 1fr;gap:12px}
+.ax{position:relative;height:16px}
+.ax span{position:absolute;transform:translateX(-50%);font-size:10.5px;color:var(--dim)}
+.sig{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+.sg{background:#f6f8fa;border:1px solid var(--line);border-radius:9px;padding:11px 12px}
+.sg .v{font-size:17px;font-weight:660}
+.sg .k{font-size:12px;color:var(--dim);margin-top:3px;line-height:1.35}
+.truth{margin-top:12px;padding:11px 14px;background:#f3f5f8;border-radius:9px;
+  font-size:13.5px;border-left:3px solid #9d84f5}
+.empty{color:var(--dim);text-align:center;padding:70px 0}
+@media(max-width:760px){.row{grid-template-columns:1fr;gap:7px}.cmp,.sig{grid-template-columns:1fr}}
+</style>
+
+<div class="top">
+  <div class="brand">Recovery Console<span>AI Revenue Recovery · Razorpay Buildathon</span></div>
+  <div class="modes">
+    <div class="mode on" data-v="live">Try it</div>
+    <div class="mode" data-v="replay">Real cases</div>
+    <div class="mode" data-v="hook">Live integration</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="live"><span class="dot"></span><span id="lat">model live</span></div>
+</div>
+
+<!-- ================= TRY IT ================= -->
+<div class="view on" id="live"><div class="wrap">
+  <div class="q1">Set up a failure. Watch the model solve it.</div>
+  <div class="q2">You choose what really went wrong. The model is never told —
+    it only sees what the bank says, exactly like in production.</div>
+
+  <div class="form">
+    <div class="row">
+      <label>What actually went wrong?<span class="sub">this is the truth, hidden from the model</span></label>
+      <select id="cause"></select>
+    </div>
+    <div class="row">
+      <label>How much was the sale?</label>
+      <div class="slide"><input type="range" id="amount" min="500" max="30000" step="500" value="9000">
+        <div class="val" id="v-amount">₹9,000</div></div>
+    </div>
+    <div class="row">
+      <label>What day is it today?<span class="sub" id="s-gap"></span></label>
+      <div class="slide"><input type="range" id="day" min="1" max="30" value="25">
+        <div class="val" id="v-day">25th</div></div>
+    </div>
+    <div class="row">
+      <label>When does this customer get paid?</label>
+      <select id="payday">
+        <option value="1">Around the 1st</option>
+        <option value="7">Around the 7th</option>
+        <option value="25">Around the 25th</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Run it</label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button id="solve" style="background:var(--blue);color:#fff;border-color:var(--blue)">▶ Solve it</button>
+        <button id="again">↻ Same problem, different bank message</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="simout"><div class="empty">Press <b>Solve it</b> and watch it work.</div></div>
+</div></div>
+
+<!-- ================= REAL CASES ================= -->
+<div class="view" id="replay"><div class="grid">
+  <div class="side">
+    <div class="sect">Pick a situation</div><div class="scn" id="scn"></div>
+    <div class="sect">Or any real failure</div><div class="queue" id="queue"></div>
+  </div>
+  <div class="rmain">
+    <div class="rbar"><button id="run">▶ Replay</button><button id="stepb">Step</button>
+      <span class="pill" id="pill">pick one on the left</span></div>
+    <div style="flex:1;overflow-y:auto;padding:18px 22px 60px" id="stage">
+      <div class="empty">Pick a situation on the left.</div></div>
+  </div>
+</div></div>
+
+
+<!-- ================= LIVE INTEGRATION ================= -->
+<div class="view" id="hook"><div class="wrap">
+  <div class="q1">Plug it into Razorpay for real</div>
+  <div class="q2">This is the endpoint a merchant points Razorpay at. Below is a
+    genuine <code>payment.failed</code> webhook payload. Send it and the same
+    model answers with the action to schedule.</div>
+
+  <div class="form" style="padding:16px 18px">
+    <div style="font-size:12.5px;font-weight:700;color:var(--dim);
+      letter-spacing:.06em;text-transform:uppercase;margin-bottom:9px">
+      What Razorpay POSTs to you</div>
+    <textarea id="hookjson" spellcheck="false" style="width:100%;height:230px;
+      font:12.5px/1.5 ui-monospace,Menlo,monospace;border:1px solid var(--line);
+      border-radius:9px;padding:12px;background:#fbfcfd;color:var(--fg);
+      resize:vertical"></textarea>
+    <div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap">
+      <button id="send" style="background:var(--blue);color:#fff;border-color:var(--blue)">
+        POST to /api/webhook</button>
+      <button id="reset">Reset payload</button>
+      <span style="color:var(--dim);font-size:12.5px">edit the JSON and send it again</span>
+    </div>
+  </div>
+
+  <div id="hookout"><div class="empty">Press <b>POST</b> to send it.</div></div>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const inr=n=>"₹"+Math.round(n).toLocaleString("en-IN");
+const ORD=n=>n+(n%100>=11&&n%100<=13?"th":{1:"st",2:"nd",3:"rd"}[n%10]||"th");
+const OPT={RETRY:"Try the payment again",NUDGE:"Message the customer",
+           SWITCH_METHOD:"Offer another way to pay"};
+const ICON={RETRY:"↻",NUDGE:"✉",SWITCH_METHOD:"⇄",retry:"↻",nudge:"✉",switch_method:"⇄"};
+const soon=h=>h<1?"in about half an hour":h<24?"in "+Math.round(h)+" hours"
+  :h<36?"tomorrow":"in "+Math.round(h/24)+" days";
+const brief=h=>h<1?"30m":h<24?Math.round(h)+"h":Math.round(h/24)+"d";
+
+document.querySelectorAll(".mode").forEach(m=>m.onclick=()=>{
+  document.querySelectorAll(".mode").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  m.classList.add("on"); $(m.dataset.v).classList.add("on");
+});
+
+
+/* ---------- LIVE INTEGRATION ---------- */
+let sample = null;
+fetch("/api/sample-webhook").then(r=>r.json()).then(j=>{
+  sample = j; $("hookjson").value = JSON.stringify(j, null, 2);
+});
+$("reset").onclick = ()=>{ if(sample) $("hookjson").value = JSON.stringify(sample,null,2); };
+
+$("send").onclick = ()=>{
+  const out = $("hookout");
+  out.innerHTML = '<div class="empty">Sending…</div>';
+  fetch("/api/webhook", {method:"POST", headers:{"Content-Type":"application/json"},
+    body: $("hookjson").value}).then(async r=>{
+      const j = await r.json();
+      if(!r.ok){ out.innerHTML = `<div class="card"><div class="ct">Rejected — HTTP ${r.status}</div>
+        <div style="color:var(--bad);font-weight:600">${j.error}</div>
+        <div style="color:var(--dim);font-size:13.5px;margin-top:8px">
+        Malformed payloads are refused rather than guessed at.</div></div>`; return; }
+      const p=j.payment, pl=j.plan, ex=j.explanation;
+      out.innerHTML = `
+      <div class="card"><div class="ct">1 — what we read out of the payload</div>
+        <table>
+          <tr><td>Payment</td><td class=n><b>${p.payment_id||"—"}</b></td></tr>
+          <tr><td>Amount Razorpay sent</td><td class=n>${p.amount_paise} paise</td></tr>
+          <tr><td>Amount we act on</td><td class=n><b>${inr(p.amount)}</b></td></tr>
+          <tr><td><code>error_code</code> (broad category)</td>
+              <td class=n style="color:var(--dim)">${p.raw_error_code||"—"}</td></tr>
+          <tr><td><code>error_reason</code> (what we key on)</td>
+              <td class=n><b>${p.error_code}</b></td></tr>
+          <tr><td>Classified as</td><td class=n>${p.recovery_class}${
+              p.opaque?' <span style="color:var(--warn)">· gives no reason</span>':''}</td></tr>
+        </table>
+        <div class="flag" style="margin-top:12px"><b>The detail most integrations get wrong.</b>
+          Razorpay's <code>error_code</code> is a category — it reads
+          <code>BAD_REQUEST_ERROR</code> for a wrong OTP, a dead card and an empty
+          account alike. The specific cause is in <code>error_reason</code>, and
+          that is what this reads. Amounts arrive in paise, not rupees.</div>
+      </div>
+
+      <div class="ans" ${pl?'':'class="ans stop"'}>
+        <div class="lb">2 — the plan we return</div>
+        <div class="hd"><div class="ic">${pl?(ICON[pl.action]||"•"):"✕"}</div>
+          <div><div class="big">${pl?((OPT[pl.action]||pl.action)+" "+soon(pl.run_at_hours_from_now)):"Do nothing"}</div>
+            <div class="odds">${pl?("confidence "+(100*pl.confidence).toFixed(0)+
+              "% · "+(pl.touches_issuer?"goes to the bank":"never touches the bank")):
+              "nothing here is worth chasing"}</div></div></div>
+        <div class="why"><div class="t">${ex.read}</div>
+          <ul>${ex.evidence.map(e=>`<li>${e}</li>`).join("")}</ul>
+          <div class="r">${ex.why}</div></div>
+      </div>
+
+      <div class="card"><div class="ct">3 — safety rules applied before answering</div>
+        ${j.guardrails.map(c=>{
+          const cl=c.verdict==="clear"?"ok":c.verdict==="raised"?"up":"no";
+          const g =c.verdict==="clear"?"✓":c.verdict==="raised"?"!":"✕";
+          return `<div class="chk"><div class="m ${cl}">${g}</div>
+            <div><div>${c.name}</div><div class="d">${c.detail}</div></div></div>`}).join("")}
+        <div style="color:var(--dim);font-size:13px;margin-top:12px">
+          ${j.options_considered} options considered ·
+          signature checking ${j.signature_verified?"enabled":
+          "off (no RAZORPAY_WEBHOOK_SECRET set — set it and unsigned calls are refused)"}</div>
+      </div>`;
+    });
+};
+
+/* ---------- TRY IT: you set the truth, the model solves it ---------- */
+let seed = 1;
+
+fetch("/api/situations").then(r=>r.json()).then(l=>{
+  $("cause").innerHTML = l.map(x=>
+    `<option value="${x.cause}" title="${x.hint}">${x.label}</option>`).join("");
+  sync();
+});
+
+function sync(){
+  $("v-amount").textContent = inr(+$("amount").value);
+  $("v-day").textContent = ORD(+$("day").value);
+  const g = ((+$("payday").value) - (+$("day").value) + 30) % 30;
+  $("s-gap").textContent = g===0 ? "today is their payday"
+    : "payday is " + g + " day" + (g>1?"s":"") + " away";
+}
+["amount","day","payday","cause"].forEach(id=>{
+  $(id).addEventListener("input", sync);
+  $(id).addEventListener("change", sync);
+});
+
+function solve(){
+  const q = new URLSearchParams({cause:$("cause").value, amount:$("amount").value,
+    day:$("day").value, payday:$("payday").value, seed:seed});
+  $("simout").innerHTML = '<div class="empty">Running the model…</div>';
+  const t0 = performance.now();
+  fetch("/api/simulate?"+q).then(r=>r.json()).then(t=>{
+    $("lat").textContent = Math.round(performance.now()-t0)+" ms · live";
+    renderFlow(t, "simout", true);
+  });
+}
+$("solve").onclick = ()=>{ solve(); };
+$("again").onclick = ()=>{ seed = (seed % 97) + 1; solve(); };
+
+/* ---------- REAL CASES ---------- */
+let cur=null,phase=-1,timer=null;
+fetch("/api/queue/0").then(r=>r.json()).then(it=>{
+  $("queue").innerHTML=it.map(q=>`<div class="qq" data-i="${q.i}">
+    <div class="amt">${inr(q.amount)}</div>${q.opaque?'<div class="op"></div>':''}</div>`).join("");
+  document.querySelectorAll(".qq").forEach(e=>e.onclick=()=>pick(+e.dataset.i));
+});
+fetch("/api/scenarios").then(r=>r.json()).then(l=>{
+  $("scn").innerHTML=l.map(s=>`<div data-k="${s.key}">${s.title}</div>`).join("");
+  document.querySelectorAll("#scn div").forEach(e=>e.onclick=()=>{
+    document.querySelectorAll("#scn div").forEach(x=>x.classList.remove("on"));
+    document.querySelectorAll(".qq").forEach(x=>x.classList.remove("on"));
+    e.classList.add("on");
+    $("stage").innerHTML='<div class="empty">Finding a clear example…</div>';
+    fetch("/api/scenario/"+e.dataset.k).then(r=>r.json()).then(boot);});
+});
+function pick(i){
+  document.querySelectorAll(".qq").forEach(x=>x.classList.toggle("on",+x.dataset.i===i));
+  document.querySelectorAll("#scn div").forEach(x=>x.classList.remove("on"));
+  $("stage").innerHTML='<div class="empty">Loading…</div>';
+  fetch("/api/trace/"+i).then(r=>r.json()).then(boot);
+}
+function boot(t){ renderFlow(t, 'stage', true); }
+function renderFlow(t, target, autoplay){
+  cur=t;phase=-1;
+  const acts=t.attempts.filter(a=>a.decision);
+  const lane=(rows,cls,nm)=>`<div class="lane ${cls}"><div class="nm">${nm}</div>
+    <div class="track"><div class="ln"></div>${rows.map(m=>
+      `<div class="mk ${m.cls}" style="left:${Math.min(96,Math.max(4,100*m.h/168))}%">${
+      m.icon}<div class="lb2">${brief(m.h)}</div></div>`).join("")}</div></div>`;
+  const ours=acts.map(a=>({h:a.decision.delay_h,icon:ICON[a.decision.action],
+    cls:a.outcome==="recovered"?"ok":(a.decision.penalty>0?"pen":"no")}));
+  const them=t.rules.steps.map(s=>({h:s.delay_h,icon:ICON[s.action],
+    cls:s.ok?"ok":((t.rules.issuer_hits>0&&(s.action==="retry"||s.action==="switch_method"))?"pen":"no")}));
+
+  $(target).innerHTML=`
+  <div class="card" id="c0" style="opacity:0"><div class="ct">1 — the failed payment</div>
+    <div style="font-size:27px;font-weight:670">${inr(t.input.amount)}</div>
+    <div style="color:var(--dim);font-size:13px">${t.input.method} · ${t.input.category}</div>
+    <div style="margin-top:12px;font-size:15.5px">The bank said:
+      <b>“${t.input.code_meaning}”</b></div>
+    ${t.input.opaque?`<div class="flag"><b>No reason given.</b> Several different
+      problems arrive with this exact message.</div>`:``}</div>
+
+  <div class="card" id="c1" style="opacity:0"><div class="ct">2 — what we worked out</div>
+    <div class="sig">${t.features.map(f=>`<div class="sg"><div class="v">${f.v}</div>
+      <div class="k">${f.k}</div></div>`).join("")}</div></div>
+
+  <div class="card" id="c2" style="opacity:0"><div class="ct">3 — the options we weighed</div>
+    <table><tr><th>Option</th><th class=n>When</th><th class=n>Chance</th>
+      <th class=n>Bank risk</th><th class=n>Worth</th></tr>
+      ${(t.attempts[0]?t.attempts[0].options:[]).map(o=>`<tr class="${o.chosen?'win':''}">
+        <td>${o.chosen?"▸ ":""}${OPT[o.action]||o.action}</td><td class=n>${brief(o.delay_h)}</td>
+        <td class=n>${(100*o.p_recover).toFixed(0)}%</td>
+        <td class=n>${(100*o.p_pushback).toFixed(0)}%</td>
+        <td class=n>${o.ev===null?"not allowed":inr(o.ev)}</td></tr>`).join("")}</table></div>
+
+  <div class="card" id="c3" style="opacity:0"><div class="ct">4 — seven days to get the money back</div>
+    ${lane(ours,"us","This model")}${lane(them,"them","Normal retries")}
+    <div class="axis"><div></div><div class="ax">${[0,24,48,72,96,120,144,168].map(h=>
+      `<span style="left:${Math.min(96,Math.max(2,100*h/168))}%">${h?h/24+"d":"0"}</span>`).join("")}</div></div>
+    <div style="margin-top:16px;color:var(--dim);font-size:13.5px">${acts.length?
+      acts.map(a=>`<div style="padding:3px 0">${ICON[a.decision.action]}
+        <b style="color:var(--fg)">${OPT[a.decision.action]}</b> ${soon(a.decision.delay_h)}
+        — cost ${inr(a.decision.cost)}${a.decision.penalty>0?
+        ` <span style="color:var(--bad)">+ ${inr(a.decision.penalty)} bank penalty</span>`:``}
+        → <b style="color:${a.outcome==='recovered'?'var(--good)':'var(--dim)'}">${
+        a.outcome==='recovered'?'worked':'failed'}</b></div>`).join(""):"<div>Took no action.</div>"}</div></div>
+
+  <div class="card" id="c4" style="opacity:0"><div class="ct">5 — result</div>
+    <div class="cmp"><div class="us"><div class="w">THIS MODEL</div>
+      <div class="v">${t.result.recovered?"Recovered "+inr(t.result.amount):"Did not recover"}</div>
+      <div style="color:var(--dim);font-size:13px;margin-top:4px">spent ${inr(t.result.cost)}</div></div>
+      <div><div class="w">A NORMAL RETRY SYSTEM</div>
+      <div class="v">${t.rules.recovered?"Recovered "+inr(t.input.amount):"Did not recover"}</div>
+      <div style="color:var(--dim);font-size:13px;margin-top:4px">spent ${inr(t.rules.cost)}${
+        t.rules.issuer_hits>0?` · <span style="color:var(--bad)">${t.rules.issuer_hits}
+        wasted knock(s) on the bank</span>`:``}</div></div></div>
+    <div class="truth"><b>What had really gone wrong:</b> ${t.true_cause}.
+      <span style="color:var(--dim)">The model never saw this — it had to work it out from what the bank said.</span></div></div>`;
+  const pl=$("pill"); if(pl) pl.textContent="0 / 5";
+  if(autoplay) play();
+}
+function adv(){
+  if(!cur||phase>=4) return false;
+  phase++; const c=$("c"+phase); if(!c) return false;
+  c.style.transition=".3s"; c.style.opacity="1";
+  if(phase===3) c.querySelectorAll(".mk").forEach((m,k)=>
+    setTimeout(()=>m.classList.add("in"),200*k+120));
+  c.scrollIntoView({behavior:"smooth",block:"nearest"});
+  const pl2=$("pill"); if(pl2) pl2.textContent=(phase+1)+" / 5";
+  return true;
+}
+function play(){ clearInterval(timer); phase=-1;
+  [0,1,2,3,4].forEach(k=>{const c=$("c"+k); if(c){c.style.opacity="0";
+    c.querySelectorAll(".mk").forEach(m=>m.classList.remove("in"));}});
+  timer=setInterval(()=>{ if(!adv()) clearInterval(timer); },1150); }
+$("run").onclick=()=>{ if(cur) play(); };
+$("stepb").onclick=()=>{ clearInterval(timer); adv(); };
+</script>

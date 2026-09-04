@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local scratch
+*.log
+/tmp/
+
+# NOTE: data/, models/ and results/ ARE committed on purpose.
+# They total ~6 MB, and committing them means anyone cloning this can run
+# `python app.py` and see the console immediately, instead of waiting ~25
+# minutes for the full pipeline to regenerate them. The pipeline is seeded, so
+# re-running it reproduces these exact files byte for byte.
